@@ -8,6 +8,24 @@ class Titular {
         this.dni = dni;
     }
 
+    get nombre() {
+        return this._nombre;
+    }
+
+    set nombre(valor) {
+        if (!valor || valor.trim() === "") throw new Error("El nombre no puede estar vacío.");
+        this._nombre = valor;
+    }
+
+    get dni() {
+        return this._dni;
+    }
+
+    set dni(valor) {
+        if (!/^\d+$/.test(valor)) throw new Error("El DNI debe contener solo números.");
+        this._dni = valor;
+    }
+
     verDatos() {
         return `${this.nombre} (DNI: ${this.dni})`;
     }
@@ -19,24 +37,43 @@ class Cuenta {
     constructor(numeroCuenta, titular, saldoInicial = 0) {
         this.numeroCuenta = numeroCuenta;
         this.titular = titular;
-        this.#saldo = saldoInicial;
+        this.saldo = saldoInicial; // Usa el setter
+    }
+
+    get numeroCuenta() {
+        return this._numeroCuenta;
+    }
+
+    set numeroCuenta(valor) {
+        if (!valor || valor.trim() === "") throw new Error("El número de cuenta no puede estar vacío.");
+        this._numeroCuenta = valor;
+    }
+
+    get titular() {
+        return this._titular;
+    }
+
+    set titular(valor) {
+        if (!(valor instanceof Titular)) throw new Error("El titular debe ser una instancia de Titular.");
+        this._titular = valor;
+    }
+
+    get saldo() {
+        return this.#saldo;
+    }
+
+    set saldo(valor) {
+        if (typeof valor !== "number" || isNaN(valor)) throw new Error("El saldo debe ser un número.");
+        this.#saldo = valor;
     }
 
     depositar(monto) {
         if (monto <= 0) throw new Error("El monto debe ser positivo.");
-        this.#saldo += monto;
+        this.saldo = this.saldo + monto;
     }
 
     extraer(monto) {
         throw new Error("Este método debe ser implementado en subclases.");
-    }
-
-    verSaldo() {
-        return this.#saldo;
-    }
-
-    _cambiarSaldo(nuevoSaldo) {
-        this.#saldo = nuevoSaldo;
     }
 }
 
@@ -46,11 +83,20 @@ class CajaDeAhorro extends Cuenta {
         this.limiteExtraccion = limiteExtraccion;
     }
 
+    get limiteExtraccion() {
+        return this._limiteExtraccion;
+    }
+
+    set limiteExtraccion(valor) {
+        if (valor <= 0) throw new Error("El límite de extracción debe ser mayor a 0.");
+        this._limiteExtraccion = valor;
+    }
+
     extraer(monto) {
         if (monto <= 0) throw new Error("El monto debe ser positivo.");
         if (monto > this.limiteExtraccion) throw new Error(`El monto excede el límite por operación: ${this.limiteExtraccion}`);
-        if (monto > this.verSaldo()) throw new Error("Saldo insuficiente.");
-        this._cambiarSaldo(this.verSaldo() - monto);
+        if (monto > this.saldo) throw new Error("Saldo insuficiente.");
+        this.saldo = this.saldo - monto;
     }
 }
 
@@ -60,16 +106,25 @@ class CuentaCorriente extends Cuenta {
         this.descubiertoPermitido = descubiertoPermitido;
     }
 
+    get descubiertoPermitido() {
+        return this._descubiertoPermitido;
+    }
+
+    set descubiertoPermitido(valor) {
+        if (valor < 0) throw new Error("El descubierto permitido no puede ser negativo.");
+        this._descubiertoPermitido = valor;
+    }
+
     extraer(monto) {
         if (monto <= 0) throw new Error("El monto debe ser positivo.");
-        if (monto > this.verSaldo() + this.descubiertoPermitido) {
+        if (monto > this.saldo + this.descubiertoPermitido) {
             throw new Error("Saldo insuficiente, incluso con descubierto.");
         }
-        this._cambiarSaldo(this.verSaldo() - monto);
+        this.saldo = this.saldo - monto;
     }
 }
 
-//SERVICIO DE ORQUESTACIÓN 
+//SERVICIO DE ORQUESTACIÓN
 
 class Banco {
     constructor(nombre) {
@@ -110,7 +165,7 @@ class Banco {
     }
 }
 
-//CLI 
+//CLI
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -119,6 +174,7 @@ const rl = readline.createInterface({
 
 const banco = new Banco("Banco POO");
 
+//Datos de prueba
 const t1 = banco.agregarTitular("Juan Pérez", "12345678");
 const t2 = banco.agregarTitular("María López", "87654321");
 banco.agregarCuenta("caja", "CA001", t1, 10000);
@@ -141,8 +197,12 @@ function manejarOpcion(opcion) {
         case "1":
             rl.question("Nombre del titular: ", nombre => {
                 rl.question("DNI del titular: ", dni => {
-                    banco.agregarTitular(nombre, dni);
-                    console.log("Titular creado correctamente.");
+                    try {
+                        banco.agregarTitular(nombre, dni);
+                        console.log("Titular creado correctamente.");
+                    } catch (e) {
+                        console.log(`Error: ${e.message}`);
+                    }
                     mostrarMenu();
                 });
             });
@@ -175,7 +235,7 @@ function manejarOpcion(opcion) {
             rl.question("Número de cuenta: ", num => {
                 const cuenta = banco.buscarCuenta(num);
                 if (!cuenta) console.log("Cuenta no encontrada.");
-                else console.log(`Saldo: $${cuenta.verSaldo()}`);
+                else console.log(`Saldo: $${cuenta.saldo}`);
                 mostrarMenu();
             });
             break;
