@@ -1,7 +1,7 @@
 import readline from "readline";
 
 function mostrarMenu() {
-    console.log("\n--- BANCO SIMPLE ---");
+    console.log("--- BANCO SIMPLE ---");
     console.log("1. Crear titular");
     console.log("2. Crear cuenta");
     console.log("3. Ver saldo");

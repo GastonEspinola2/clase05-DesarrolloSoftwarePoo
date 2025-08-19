@@ -5,6 +5,6 @@
   "type": "module",
   "main": "banco.js",
   "scripts": {
-    "start": "node banco.js"
+    "start": "node index.js"
   }
 }
