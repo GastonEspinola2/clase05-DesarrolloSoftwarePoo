@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Actividad POO Banco Simple",
   "type": "module",
-  "main": "banco.js",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js"
   }
